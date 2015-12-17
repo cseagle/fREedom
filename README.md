@@ -5,7 +5,7 @@ binnavi (https://github.com/google/binnavi).
 WARNING: This software is in its infancy
 
 Background: binnavi is a graphical "binary navigator" useful for reverse
-engineering softawre. binnavi does not contain its own disassembler, instead
+engineering software. binnavi does not contain its own disassembler, instead
 relying upon the capabilities of the commercial disassembler, IDA Pro.
 binnavi ships with an IDA plugin that extracts required information from an
 existing IDA database into a set of binnavi compatible, Postgres tables. The
