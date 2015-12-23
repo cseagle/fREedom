@@ -37,11 +37,11 @@ you'll need psycopg2.
 Limitations:  
 * fREedom's disassembly engine is not as thorough as IDA's, lacking many of
 the heuristics that IDA uses to identify code.
-* There is currently no support for know data types and library function
+* There is currently no support for known data types and library function
 signatures. binnavi's type system is complex and not well documented.
 Substantial effort will be required to process development header files from
 many platforms in order to incorporate this information into fREedom generated
 disassemblies.
-* Parsers (cruse at best) are included for only PE32, PE32+, and ELF.
-* Disassembly generators are include for only x86 and x86_64.
+* Parsers (crude at best) are included for only PE32, PE32+, and ELF.
+* Disassembly generators are included for only x86 and x86_64.
 * My python skills are not good.
