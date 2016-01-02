@@ -605,6 +605,21 @@ class Disassembly(object):
    
       print "After first pass, have %d insts" % len(self.visited)
    
+      main = self.loader.find_main(self.insts, self.xrefs_to, self.xrefs_from)
+      if main is not None and main not in self.visited:
+         self.locs.append(main)
+         self.call_targets.add(main)
+         self.add_basic_block_start(main)
+         if "main" not in self.names:
+            self.names[main] = "main"
+         elif "_main" not in self.names:
+            self.names[main] = "_main"
+         else:
+            self.names[main] = "sub_%x" % main
+      self.generate_disassembly()   
+
+      print "After 'find_main' pass, have %d insts" % len(self.visited)
+   
       #pick up pointers in the rdata section
 #      self.scan_data()
 #      self.generate_disassembly()

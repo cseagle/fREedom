@@ -219,4 +219,10 @@ class Loader(object):
 
    def add_export(self, addr, name):
       self.exports_by_addr[addr] = name
+      
+   #override in subclasses if you have an algorithm
+   #for finding main given the address of start
+   #and all currently known instructions
+   def find_main(self, insts, to, frm):
+      return None
 

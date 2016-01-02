@@ -20,6 +20,11 @@ import binascii
 import capstone
 from loader import *
 
+XR_FLOW = 1
+XR_CALL = 2
+XR_JUMP = 3
+XR_JCC  = 4
+
 EI_CLASS    = 4        # File class byte index
 ELFCLASSNONE = 0    # Invalid class
 ELFCLASS32  = 1     # 32-bit objects
@@ -726,6 +731,7 @@ class ElfBase(Loader):
          self.phdrs = []
          self.shdrs = []
 
+         self.osabi = ord(self.raw[EI_OSABI])
          self.image_base = None   # set in load_phdrs
          self.start = self.e_entry
 
@@ -743,6 +749,35 @@ class ElfBase(Loader):
          self.parse_exports()
          return True
       return False
+
+   def find_main(self, insts, to, frm):
+      if self.arch != capstone.CS_ARCH_X86:
+         return None
+      addr = self.start
+      if self.osabi != ELFOSABI_LINUX:
+         #find main by scanning Linux start stup
+         while addr in frm:
+            inst = insts[addr]
+            if inst.group(capstone.CS_GRP_JUMP):
+               break
+            xrefs = frm[addr]
+            if inst.group(capstone.CS_GRP_CALL):
+               for x in xrefs:
+                  if x[1] == XR_CALL:
+                     #call to libc_start_main
+                     last = to[addr][0][0]
+                     inst = insts[last]
+                     main = inst.operands[-1].value.imm
+                     return main
+               break
+            elif len(xrefs) == 1:
+               if xrefs[0][1] == XR_FLOW:
+                  addr = xrefs[0][0]
+               else:
+                  break
+            else:
+               break
+      return None
 
 class Elf32(ElfBase):
 
