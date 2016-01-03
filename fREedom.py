@@ -25,6 +25,10 @@ class UnsupportedArch(Exception):
    def __init__(self, msg):
       Exception.__init__(self, msg)
 
+class UnsupportedFormat(Exception):
+   def __init__(self, msg):
+      Exception.__init__(self,msg)
+
 def main(args):
 
    # cycle through available loaders, if one matches
