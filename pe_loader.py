@@ -298,11 +298,11 @@ class PeBase(Loader):
          self.arch_name = 'ARM-32'
       elif self.FileHeader.Machine == IMAGE_FILE_MACHINE_ARMV7:
          self.arch = capstone.CS_ARCH_ARM
-         self.mode = CS_MODE_THUMB
+         self.mode = capstone.CS_MODE_THUMB
          self.arch_name = 'ARM-THUMB'
       elif self.FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64:
          self.arch = capstone.CS_ARCH_X86
-         self.mode = CS_MODE_64
+         self.mode = capstone.CS_MODE_64
          self.arch_name = 'x86-64'
       else:
          # anything else, we don't recognize
