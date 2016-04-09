@@ -575,6 +575,8 @@ class Disassembly(object):
                            if tgt[0] == addr:
                               dests.remove(tgt)
                               break
+                        if len(dests) == 0:
+                           self.xrefs_from.pop(s[0])
                   self.xrefs_to.pop(addr, None)
                break
             if i.address in self.visited:
