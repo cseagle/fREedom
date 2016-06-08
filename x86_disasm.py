@@ -76,7 +76,9 @@ class x86_disasm(Disassembly):
          if self.is_possible_code(addr):
             self.locs.append(addr)
             self.call_targets.add(addr)
-            self.add_basic_block_start(addr)
+            if addr != 0:
+               #treat address zero differently, don't add xrefs to it
+               self.add_basic_block_start(addr)
 
       if loader.mode == capstone.CS_MODE_32 and loader.arch == capstone.CS_ARCH_X86:
          self.func_sigs.append("\x8b\xff\x55\x8b\xec")
@@ -125,7 +127,9 @@ class x86_disasm(Disassembly):
       if len(from_list) >= 2 and not self.is_returning_call(from_list):
          # add all destinations to basic_blocks
          for xr in from_list:
-            self.add_basic_block_start(xr[0])
+            if xr[0] != 0:
+               #treat address zero differently, don't add xrefs to it
+               self.add_basic_block_start(xr[0])
       
       if to not in self.xrefs_to:
          self.xrefs_to[to] = []
@@ -142,7 +146,9 @@ class x86_disasm(Disassembly):
          self.names[to] = 'sub_%x' % to
       if to not in self.basic_blocks:
          if xr_type == XR_CALL or len(to_list) > 1:
-            self.add_basic_block_start(to)
+            if to != 0:
+               #treat address zero differently, don't add xrefs to it
+               self.add_basic_block_start(to)
 
    #add an address we need to explore
    def add_loc(self, addr):

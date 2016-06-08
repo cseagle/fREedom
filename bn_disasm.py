@@ -344,7 +344,10 @@ class Disassembly(object):
             break
          func_insts.add(addr)
          if self.is_bb_start(addr):
-            bb = self.add_basic_block(addr, func)
+            if addr == 0:
+               print "tried to add basic block at 0 for func 0x%x" % func
+            else:
+               bb = self.add_basic_block(addr, func)
          if addr in self.xrefs_from:
             flows_to = -1
             xrefs = self.xrefs_from[addr]
@@ -383,6 +386,9 @@ class Disassembly(object):
       for addr,bb in self.basic_blocks.iteritems():
          seq = 0
          while True:
+            if addr not in self.insts:
+               #may have reference to invalid isntruction
+               break
             inst = self.insts[addr]
             inst.bb = [BlockInfo(b[0], seq, b[1]) for b in bb] #block may belong to more than one function
             seq += 1
@@ -609,6 +615,7 @@ class Disassembly(object):
    
       main = self.loader.find_main(self.insts, self.xrefs_to, self.xrefs_from)
       if main is not None and main not in self.visited:
+         print "Found main at 0x%x" % main
          self.locs.append(main)
          self.call_targets.add(main)
          self.add_basic_block_start(main)

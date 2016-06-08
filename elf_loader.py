@@ -314,6 +314,7 @@ class ElfSectionHeader(object):
    # do our best to handle both Elf32_Shdr and Elf64_Shdr
    def __init__(self, elf, offset):
       try:
+         self.elf = elf
          self.raw = elf.raw[offset:offset+elf.e_shentsize]
          if elf.sizeof_ptr == 8:
             fields = struct.unpack(elf.endian + "IIQQQQIIQQ", self.raw)
@@ -361,6 +362,26 @@ class ElfSectionHeader(object):
          offset += 1
       return res
 
+   def get_symbol(self, offset):
+      #if this isn't a SYMTAB section we should probably throw an exception
+      strtab = self.elf.shdrs[self.sh_link]
+      sym_start = self.sh_offset + offset
+      st_name = struct.unpack(self.elf.endian + "I", self.content[sym_start:sym_start + 4])[0]
+      if self.elf.sizeof_ptr == 4:
+         idx = 2
+         fields = struct.unpack(self.elf.endian + "IIBBH", self.content[sym_start + 4:sym_start + 16])
+      else:
+         idx = 0
+         fields = struct.unpack(self.elf.endian + "BBHQQ", self.content[sym_start + 4:sym_start + 24])
+      st_info = fields[idx]
+      st_other = fields[idx + 1]
+      st_shndx = fields[idx + 2]
+      st_value = fields[(idx + 3) % 5]
+      st_size = fields[(idx + 4) % 5]
+      name = strtab.get_string(st_name)
+      #print "Symbol name: %s" % name
+      return ElfSymbol(name, st_value, st_size, st_info, st_other, st_shndx)
+
 class ElfProgramHeader(object):
    # do our best to handle both Elf32_Phdr and Elf64_Phdr
    def __init__(self, elf, offset):
@@ -404,7 +425,7 @@ class ElfProgramHeader(object):
                elif d_tag == DT_NULL:
                   break
                elif d_tag == DT_STRTAB:
-                  if elf.symbol_strtab is not None:
+                  if elf.symbol_strtab != 0:
                      #print "Existing strtab: 0x%x" % elf.symbol_strtab
                      #print "DT_STRTAB: 0x%x" % d_un
                      pass
@@ -464,7 +485,7 @@ class ElfBase(Loader):
       del self.symbols
       Loader.__del__(self)
 
-   # Perform common PE validation tasks
+   # Perform common ELF validation tasks
    def is_valid(self):
       if self.raw[0:4] != '\x7fELF':
          return False
@@ -552,7 +573,7 @@ class ElfBase(Loader):
       self.e_shnum = fields[4]
       self.e_shstrndx = fields[5]
 
-      self.symbol_strtab = None
+      self.symbol_strtab = 0
 
       # some sanity checks
 
@@ -652,22 +673,7 @@ class ElfBase(Loader):
             num_syms = s.sh_size // symsz
             #print "Section %s has %d symbols" % (s.name, num_syms)
             for i in range(num_syms):
-               addr = s.sh_addr + i * symsz
-               st_name = self.get_dword(addr)
-               if self.sizeof_ptr == 4:
-                  idx = 2
-                  fields = struct.unpack(self.endian + "IIBBH", self.get_bytes(addr + 4, 12))
-               else:
-                  idx = 0
-                  fields = struct.unpack(self.endian + "BBHQQ", self.get_bytes(addr + 4, 20))
-               st_info = fields[idx]
-               st_other = fields[idx + 1]
-               st_shndx = fields[idx + 2]
-               st_value = fields[(idx + 3) % 5]
-               st_size = fields[(idx + 4) % 5]
-               name = self.get_string(self.symbol_strtab + st_name)
-               #print "Symbol name: %s" % name
-               sym = ElfSymbol(name, st_value, st_size, st_info, st_other, st_shndx)
+               sym = s.get_symbol(i * symsz)
                self.symbols.append(sym)
                #if sym.type == STT_FUNC:
                   #print "Function symbol %s at address 0x%x" % (name, st_value)
@@ -706,7 +712,7 @@ class ElfBase(Loader):
       for i in range(self.e_shnum):
          shdr = ElfSectionHeader(self, self.e_shoff + self.e_shentsize * i)
          self.shdrs.append(shdr)
-         if shdr.sh_type == SHT_STRTAB and i != self.e_shstrndx:
+         if shdr.sh_type == SHT_STRTAB and i != self.e_shstrndx and self.symbol_strtab != 0:
             self.symbol_strtab = shdr.sh_addr
 
       # now that we have sections, go back and pull section names
